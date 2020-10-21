@@ -15,7 +15,7 @@ class WidgetGallery(QDialog):
         styleLabel = QLabel("File:")
 
         # file path text
-        self.qline_filename = QLineEdit()
+        self.qline_filename = QLineEdit(self)
 
         # browse button @TODO: find path to browse file
         fileButton = QPushButton("Browser")
@@ -69,15 +69,17 @@ class WidgetGallery(QDialog):
         self.topRightGroupBox.setLayout(layout)
 
     def browse_path_button_click(self):
-        '''
-        Read the input txt file to self.data
-        :return:
-        '''
-
         try:
-            file_path = self.qline_filename.text()  # get current file name in qline box
-            with open(file_path, 'r', encoding="utf-8") as f:
-                self.data = f.read()
+            fname = str(QFileDialog.getOpenFileName(self, 'Open file', 
+            '',"Text files (*.txt)"))
+            fname = fname.split( "'")[1]
+            print(fname)
+            self.qline_filename.setText(str(fname))
+            file = open(fname,'r', encoding="utf8")
+            with file:
+                text = file.read()
+                # print(text)
+                self.text2.setText(text)
         except Exception as e:
             error_dialog = QErrorMessage()
             error_dialog.showMessage('Không mở được file')
