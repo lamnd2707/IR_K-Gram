@@ -70,16 +70,15 @@ class WidgetGallery(QDialog):
 
     def browse_path_button_click(self):
         try:
-            fname = str(QFileDialog.getOpenFileName(self, 'Open file', 
-            '',"Text files (*.txt)"))
-            fname = fname.split( "'")[1]
+            fname = str(QFileDialog.getOpenFileName(self, 'Open file',
+                                                    '', "Text files (*.txt)"))
+            fname = fname.split("'")[1]
             print(fname)
             self.qline_filename.setText(str(fname))
-            file = open(fname,'r', encoding="utf8")
+            file = open(fname, 'r', encoding="utf8")
             with file:
-                text = file.read()
-                # print(text)
-                self.text2.setText(text)
+                self.data = file.read()
+                self.text2.setText(self.data)
         except Exception as e:
             error_dialog = QErrorMessage()
             error_dialog.showMessage('Không mở được file')
@@ -95,6 +94,7 @@ class WidgetGallery(QDialog):
             k_gram = self.k_gram_text.text()
             regex = r'(?i)\b[a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵđ"]+\b'
             paragraphs = self.data.split("\n\n")
+            self.text2.clear()
             for paragraph_index, paragraph in enumerate(paragraphs):
                 for line_index, line in enumerate(paragraph.split('\n')):
                     res = ""
@@ -112,6 +112,7 @@ class WidgetGallery(QDialog):
                                                                                                     line.strip()))
 
         except Exception as e:
+            print(e)
             error_dialog = QErrorMessage()
             error_dialog.showMessage('Lỗi k-gram')
             error_dialog.exec_()
