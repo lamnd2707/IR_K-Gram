@@ -1,6 +1,4 @@
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
 import re
 import subprocess
 
@@ -85,19 +83,18 @@ class WidgetGallery(QDialog):
             error_dialog.exec_()
 
     def set_output_text(self):
-        try:
-            with open(self.qline_filename.text(), 'r') as file:
+        if self.qline_filename.text().endswith('.txt'):
+            with open(self.qline_filename.text(), 'r', encoding='utf-8') as file:
                 self.data = file.read()
                 self.text2.setText(self.data)
-        except Exception as e:
+        else:
             self.vnexpress_crawler(self.qline_filename.text())
-            self.data = open('output.txt', 'r').read()
+            self.data = open('output.txt', 'r', encoding='utf-8').read()
             self.text2.setText(self.data)
-
 
     @staticmethod
     def vnexpress_crawler(url):
-        subprocess.Popen(["scrapy", "crawl", "crawler", "-a", "start_url={}".format(url)])
+        subprocess.Popen(["scrapy", "crawl", "crawler", "-a", "start_url={}".format(url)], shell=True)
 
     def k_gram_button_click(self):
         '''
@@ -110,6 +107,7 @@ class WidgetGallery(QDialog):
             regex = r'(?i)\b[a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵđ"]+\b'
             paragraphs = self.data.split("\n\n")
             self.text2.clear()
+            total = 0
             for paragraph_index, paragraph in enumerate(paragraphs):
                 for line_index, line in enumerate(paragraph.split('\n')):
                     res = ""
@@ -119,17 +117,19 @@ class WidgetGallery(QDialog):
                     n = len(k_gram)
                     grams = [res[i:i + n] for i in range(len(res) - n + 1)]
                     if k_gram in grams:
+                        total += grams.count(k_gram)
                         # print result to box @TODO: find word location
                         self.text2.insertPlainText(
-                            "Found {} in paragraph: {}, line : {}, position ??:, \" {} \"\n".format(grams.count(k_gram),
+                            "Tìm thấy {} trong đoạn thứ: {}, dòng thứ : {}, vị trí ??:, \" {} \"\n".format(grams.count(k_gram),
                                                                                                     paragraph_index + 1,
                                                                                                     line_index + 1,
                                                                                                     line.strip()))
+            self.text2.insertPlainText("\nTìm thấy tổng cộng {} trong file".format(total))
 
         except Exception as e:
             print(e)
             error_dialog = QErrorMessage()
-            error_dialog.showMessage('Lỗi k-gram')
+            error_dialog.showMessage('Lỗi khi tìm k-gram')
             error_dialog.exec_()
 
 
