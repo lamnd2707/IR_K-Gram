@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 import re
 import subprocess
 
@@ -46,11 +48,11 @@ class WidgetGallery(QDialog):
         mainLayout.setRowStretch(1, 15)
         mainLayout.setRowStretch(2, 1)
         mainLayout.setColumnStretch(0, 1)
-        mainLayout.setColumnStretch(1, 5)
+        mainLayout.setColumnStretch(1, 20)
         self.setLayout(mainLayout)
 
         self.setWindowTitle("Tìm Kiếm Thông Tin")
-
+        self.setWindowIcon(QIcon("icon.ico"))
     def createTopLeftGroupBox(self):
         self.topLeftGroupBox = QGroupBox("Group 1")
         nhapLabel = QLabel("Nhập K: ")
@@ -156,6 +158,7 @@ class WidgetGallery(QDialog):
                                 continue
 
                         self.text2.insertPlainText(
+
                             "Tìm thấy {} trong đoạn thứ: {}, dòng thứ : {}, tại các vị trí {}:, \" {} \"\n".format(
                                 grams.count(k_gram),
                                 paragraph_index + 1,
