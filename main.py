@@ -23,6 +23,12 @@ class WidgetGallery(QDialog):
         fileButton.clicked.connect(self.browse_path_button_click)
         fileButton2.clicked.connect(self.set_output_text)
 
+        # stop word
+        with open('vietnamese-stopwords.txt', 'r', encoding='utf-8') as f:
+            self.stop_words = []
+            for word in f.readlines():
+                self.stop_words.append(word.strip('\n'))
+
         self.createTopLeftGroupBox()
         self.createTopRightGroupBox()
 
@@ -106,12 +112,15 @@ class WidgetGallery(QDialog):
             k_gram = self.k_gram_text.text()
             regex = r'(?i)\b[a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵđ"]+\b'
             paragraphs = self.data.split("\n\n")
+
             self.text2.clear()
             total = 0
             for paragraph_index, paragraph in enumerate(paragraphs):
                 for line_index, line in enumerate(paragraph.split('\n')):
                     res = ""
-
+                    origin_line = line
+                    for stop_word in self.stop_words:
+                        line = line.replace(' ' + stop_word + ' ', ' ')
                     for c in (re.findall(regex, line)):
                         res += c
                     n = len(k_gram)
@@ -119,11 +128,40 @@ class WidgetGallery(QDialog):
                     if k_gram in grams:
                         total += grams.count(k_gram)
                         # print result to box @TODO: find word location
+                        temp = ''
+                        pos = 0
+                        result_pos = []
+                        for char in origin_line:
+                            pos += 1
+                            if char in ',.:;/][{}!@#$%^&*()-=+_\'\" ':
+                                continue
+
+                            if not temp:
+                                if char == k_gram:
+                                    result_pos.append(str(pos - len(k_gram) + 1))
+                                    temp = ''
+                                if char == k_gram[0]:
+                                    temp += char
+                                else:
+                                    temp = ''
+                                continue
+                            temp += char
+
+                            if temp == k_gram:
+                                result_pos.append(str(pos - len(k_gram) + 1))
+                                temp = ''
+
+                            if temp not in k_gram:
+                                temp = ''
+                                continue
+
                         self.text2.insertPlainText(
-                            "Tìm thấy {} trong đoạn thứ: {}, dòng thứ : {}, vị trí ??:, \" {} \"\n".format(grams.count(k_gram),
-                                                                                                    paragraph_index + 1,
-                                                                                                    line_index + 1,
-                                                                                                    line.strip()))
+                            "Tìm thấy {} trong đoạn thứ: {}, dòng thứ : {}, tại các vị trí {}:, \" {} \"\n".format(
+                                grams.count(k_gram),
+                                paragraph_index + 1,
+                                line_index + 1,
+                                ' '.join(result_pos),
+                                origin_line.strip()))
             self.text2.insertPlainText("\nTìm thấy tổng cộng {} trong file".format(total))
 
         except Exception as e:
