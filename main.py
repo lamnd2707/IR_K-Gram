@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import re
+import subprocess
 
 
 class WidgetGallery(QDialog):
@@ -12,14 +13,17 @@ class WidgetGallery(QDialog):
         self.data = None
 
         # label
-        styleLabel = QLabel("File:")
+        styleLabel = QLabel("Nhập tên file hoặc vn express url:")
 
         # file path text
         self.qline_filename = QLineEdit(self)
+        self.qline_filename.setFixedWidth(1000)
 
-        # browse button @TODO: find path to browse file
-        fileButton = QPushButton("Browser")
+        # browse button
+        fileButton = QPushButton("Browse")
+        fileButton2 = QPushButton("Xong")
         fileButton.clicked.connect(self.browse_path_button_click)
+        fileButton2.clicked.connect(self.set_output_text)
 
         self.createTopLeftGroupBox()
         self.createTopRightGroupBox()
@@ -28,6 +32,7 @@ class WidgetGallery(QDialog):
         topLayout.addWidget(styleLabel)
         topLayout.addWidget(self.qline_filename)
         topLayout.addWidget(fileButton)
+        topLayout.addWidget(fileButton2)
         topLayout.addStretch(1)
 
         mainLayout = QGridLayout()
@@ -73,16 +78,26 @@ class WidgetGallery(QDialog):
             fname = str(QFileDialog.getOpenFileName(self, 'Open file',
                                                     '', "Text files (*.txt)"))
             fname = fname.split("'")[1]
-            print(fname)
             self.qline_filename.setText(str(fname))
-            file = open(fname, 'r', encoding="utf8")
-            with file:
-                self.data = file.read()
-                self.text2.setText(self.data)
         except Exception as e:
             error_dialog = QErrorMessage()
             error_dialog.showMessage('Không mở được file')
             error_dialog.exec_()
+
+    def set_output_text(self):
+        try:
+            with open(self.qline_filename.text(), 'r') as file:
+                self.data = file.read()
+                self.text2.setText(self.data)
+        except Exception as e:
+            self.vnexpress_crawler(self.qline_filename.text())
+            self.data = open('output.txt', 'r').read()
+            self.text2.setText(self.data)
+
+
+    @staticmethod
+    def vnexpress_crawler(url):
+        subprocess.Popen(["scrapy", "crawl", "crawler", "-a", "start_url={}".format(url)])
 
     def k_gram_button_click(self):
         '''
