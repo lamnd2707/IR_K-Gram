@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+import os
 import re
 import subprocess
 
@@ -53,30 +54,53 @@ class WidgetGallery(QDialog):
 
         self.setWindowTitle("Tìm Kiếm Thông Tin")
         self.setWindowIcon(QIcon("icon.ico"))
+
     def createTopLeftGroupBox(self):
         self.topLeftGroupBox = QGroupBox("Group 1")
         nhapLabel = QLabel("Nhập K: ")
-
         self.k_gram_text = QLineEdit()
 
         # button
         xongButton = QPushButton("Xong")
         xongButton.clicked.connect(self.k_gram_button_click)
 
+        # nhapLabel1 = QLabel("Nhập chữ: ")
+        # self.gram_text = QLineEdit()
+        #
+        # xongButton1 = QPushButton("Xong")
+        # xongButton.clicked.connect(self.k_gram_button_click)
+
         layout = QVBoxLayout()
         layout.addWidget(nhapLabel)
         layout.addWidget(self.k_gram_text)
         layout.addWidget(xongButton)
+
+        # layout.addWidget(nhapLabel1)
+        # layout.addWidget(self.gram_text)
+        # layout.addWidget(xongButton1)
+
         layout.addStretch(1)
         self.topLeftGroupBox.setLayout(layout)
 
     def createTopRightGroupBox(self):
         self.topRightGroupBox = QGroupBox("Kết Quả")
         self.text2 = QTextEdit()
-        layout = QVBoxLayout()
 
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Văn bản gốc: "))
         layout.addWidget(self.text2, 12)
         layout.addStretch(1)
+
+        self.text3 = QTextEdit()
+        layout.addWidget(QLabel("Văn bản lược bỏ từ dừng: "))
+        layout.addWidget(self.text3, 12)
+        layout.addStretch(2)
+
+        self.text4 = QTextEdit()
+        layout.addWidget(QLabel("K-gram được tách ra: "))
+        layout.addWidget(self.text4, 12)
+        layout.addStretch(3)
+
         self.topRightGroupBox.setLayout(layout)
 
     def browse_path_button_click(self):
@@ -91,12 +115,14 @@ class WidgetGallery(QDialog):
             error_dialog.exec_()
 
     def set_output_text(self):
+        import time
         if self.qline_filename.text().endswith('.txt'):
             with open(self.qline_filename.text(), 'r', encoding='utf-8') as file:
                 self.data = file.read()
                 self.text2.setText(self.data)
         else:
             self.vnexpress_crawler(self.qline_filename.text())
+            time.sleep(5)
             self.data = open('output.txt', 'r', encoding='utf-8').read()
             self.text2.setText(self.data)
 
@@ -111,62 +137,49 @@ class WidgetGallery(QDialog):
         '''
 
         try:
-            k_gram = self.k_gram_text.text()
+            k_gram = int(self.k_gram_text.text())
             regex = r'(?i)\b[a-záàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệóòỏõọôốồổỗộơớờởỡợíìỉĩịúùủũụưứừửữựýỳỷỹỵđ"]+\b'
             paragraphs = self.data.split("\n\n")
 
             self.text2.clear()
-            total = 0
+            total_gram = dict()
+            if os.path.exists('result.txt'):
+                os.remove('result.txt')
+            if os.path.exists('stop_word_stripped.txt'):
+                os.remove('stop_word_stripped.txt')
+
             for paragraph_index, paragraph in enumerate(paragraphs):
                 for line_index, line in enumerate(paragraph.split('\n')):
                     res = ""
-                    origin_line = line
                     for stop_word in self.stop_words:
                         line = line.replace(' ' + stop_word + ' ', ' ')
+                    # stop word
+                    with open('stop_word_stripped.txt', 'a', encoding='utf-8') as f:
+                        f.write(''.join(line) + '\n')
                     for c in (re.findall(regex, line)):
                         res += c
-                    n = len(k_gram)
-                    grams = [res[i:i + n] for i in range(len(res) - n + 1)]
-                    if k_gram in grams:
-                        total += grams.count(k_gram)
-                        # print result to box @TODO: find word location
-                        temp = ''
-                        pos = 0
-                        result_pos = []
-                        for char in origin_line:
-                            pos += 1
-                            if char in ',.:;/][{}!@#$%^&*()-=+_\'\" ':
-                                continue
+                    grams = [res[i:i + k_gram] for i in range(len(res) - k_gram + 1)]
+                    for gram in grams:
+                        if total_gram.get(gram) is not None:
+                            total_gram[gram] = total_gram.get(gram) + 1
+                        else:
+                            total_gram[gram] = 1
 
-                            if not temp:
-                                if char == k_gram:
-                                    result_pos.append(str(pos - len(k_gram) + 1))
-                                    temp = ''
-                                if char == k_gram[0]:
-                                    temp += char
-                                else:
-                                    temp = ''
-                                continue
-                            temp += char
+            with open('result.txt', 'a', encoding='utf-8') as f:
+                for i in sorted(total_gram.keys(), key=str.casefold):
+                    f.write(i + ' - Tần suất: ' + str(total_gram.get(i)) + '\n')
 
-                            if temp == k_gram:
-                                result_pos.append(str(pos - len(k_gram) + 1))
-                                temp = ''
+            with open('sample.txt', 'r', encoding='utf-8') as f:
+                for line in f.readlines():
+                    self.text2.insertPlainText(''.join(line) + '\n')
 
-                            if temp not in k_gram:
-                                temp = ''
-                                continue
+            with open('stop_word_stripped.txt', 'r', encoding='utf-8') as f:
+                for line in f.readlines():
+                    self.text3.insertPlainText(''.join(line) + '\n')
 
-                        self.text2.insertPlainText(
-
-                            "Tìm thấy {} trong đoạn thứ: {}, dòng thứ : {}, tại các vị trí {}:, \" {} \"\n".format(
-                                grams.count(k_gram),
-                                paragraph_index + 1,
-                                line_index + 1,
-                                ' '.join(result_pos),
-                                origin_line.strip()))
-            self.text2.insertPlainText("\nTìm thấy tổng cộng {} trong file".format(total))
-
+            with open('result.txt', 'r', encoding='utf-8') as f:
+                for line in f.readlines():
+                    self.text4.insertPlainText(''.join(line))
         except Exception as e:
             print(e)
             error_dialog = QErrorMessage()
