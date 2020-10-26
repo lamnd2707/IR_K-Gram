@@ -96,11 +96,20 @@ class WidgetGallery(QDialog):
         layout.addWidget(self.text3, 12)
         layout.addStretch(2)
 
-        self.text4 = QTextEdit()
-        layout.addWidget(QLabel("K-gram được tách ra: "))
-        layout.addWidget(self.text4, 12)
-        layout.addStretch(3)
+        layout2 = QHBoxLayout()
 
+        self.text4 = QTextEdit()
+        layout2.addWidget(QLabel("K-gram được tách ra theo thứ tự alphabet: "))
+        layout2.addWidget(self.text4, 12)
+        layout2.addStretch(1)
+
+        self.text5 = QTextEdit()
+        layout2.addWidget(QLabel("K-gram được tách ra theo tần suất giảm dần: "))
+        layout2.addWidget(self.text5, 12)
+        layout2.addStretch(2)
+
+        layout.addLayout(layout2)
+        layout.addStretch(3)
         self.topRightGroupBox.setLayout(layout)
 
     def browse_path_button_click(self):
@@ -168,6 +177,10 @@ class WidgetGallery(QDialog):
             with open('result.txt', 'a', encoding='utf-8') as f:
                 for i in sorted(total_gram.keys(), key=str.casefold):
                     f.write(i + ' - Tần suất: ' + str(total_gram.get(i)) + '\n')
+
+            temp = {k: v for k, v in sorted(total_gram.items(), key=lambda item: item[1], reverse=True)}
+            for k, v in temp.items():
+                self.text5.insertPlainText(k + ' - Tần suất: ' + str(v) + '\n')
 
             with open('sample.txt', 'r', encoding='utf-8') as f:
                 for line in f.readlines():
